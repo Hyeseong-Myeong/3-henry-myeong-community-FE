@@ -1,6 +1,6 @@
 import { getToken, clearToken } from './auth.js';
 
-const BASE_URL = "http://localhost:8080/api"
+const BASE_URL = "http://3.36.177.13:8080/api"
 
 // 백엔드 API에 요청을 보내는 범용 함수.
 // Authorization 헤더 추가 및 기본적인 에러 처리를 담당
@@ -19,6 +19,7 @@ async function request(method, path, body = null) {
     const options = {
         method,
         headers,
+        credential: 'include',
     };
 
     if (body) {
