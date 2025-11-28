@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 jobs:
   # 1. 빌드 및 이미지 푸시
   build-and-push:
@@ -58,10 +58,8 @@ jobs:
             docker pull registry.ktbcommunity.cloud/ktb_fe:latest
             
             # 컨테이너 재시작 (기존 컨테이너 삭제 후 재생성)
-            if [ $(docker ps -q -f name=fe-server) ]; then
-              docker stop fe-server
-              docker rm fe-server
-            fi
+            docker rm -f fe-server || true
+
             
             # 새 컨테이너 실행
             docker run -d \
