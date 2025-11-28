@@ -1,5 +1,6 @@
 .idea
 .git
+.github
 .gitignore
 .dockerignore
 Dockerfile
@@ -7,3 +8,6 @@ Dockerfile
 *.sh
 *.yml
 scripts
+node_modules
+npm-debug.log
+.env
