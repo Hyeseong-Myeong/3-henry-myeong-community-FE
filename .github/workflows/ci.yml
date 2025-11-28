@@ -26,21 +26,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. 지정된 버전의 Node.js를 설정합니다.
+    # 2. 지정된 버전의 Node.js를 설정하고, SRC 폴더의 package-lock.json을 캐시 의존성 경로로 지정합니다.
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm' # npm 의존성 캐싱을 활성화하여 빌드 속도를 향상시킵니다.
+        cache: 'npm'
+        cache-dependency-path: SRC/package-lock.json
 
     # 3. 프로젝트 의존성을 설치합니다.
     - name: Install dependencies
+      working-directory: ./SRC
       run: npm install
 
     # 4. (선택 사항) 프로젝트를 빌드합니다. `package.json`에 'build' 스크립트가 있는 경우에만 실행됩니다.
     - name: Build project
+      working-directory: ./SRC
       run: npm run build --if-present
 
     # 5. (선택 사항) 테스트를 실행합니다. 'test' 스크립트가 있다면 주석을 해제하여 사용하세요.
     # - name: Run tests
     #   run: npm test
+    #   working-directory: ./SRC
