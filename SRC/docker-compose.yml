@@ -1,0 +1,16 @@
+services:
+  frontend:
+    image: registry.ktbcommunity.cloud/ktb_fe:latest
+    container_name: fe-server
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      TZ: "Asia/Seoul"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
-  # 1. 빌드 및 이미지 푸시
+  # 빌드 및 이미지 푸시
   build-and-push:
     runs-on: ubuntu-latest
     steps:
@@ -32,10 +32,15 @@ jobs:
           platforms: linux/amd64
           tags: registry.ktbcommunity.cloud/ktb_fe:latest
 
-  # 2. EC2 B에 배포 (EC2 A를 경유)
+  # EC2 B에 배포 (Proxy를 경유)
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
     steps:
       - name: Deploy to EC2 B via Proxy
         uses: appleboy/ssh-action@master
