@@ -1,0 +1,86 @@
+name: KTB FE CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./SRC
+        run: npm ci
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Portainer Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.ktbcommunity.cloud
+          username: ${{ secrets.PORTAINER_REGISTRY_USER }}
+          password: ${{ secrets.PORTAINER_REGISTRY_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./SRC  # Dockerfile이 있는 경로
+          file: ./SRC/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: registry.ktbcommunity.cloud/ktb_fe:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to EC2 B via Proxy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.FE_SERVER_HOST }}
+          username: ${{ secrets.FE_SERVER_USER }} # ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          
+          proxy_host: ${{ secrets.PROXY_HOST }}
+          proxy_username: ${{ secrets.PROXY_USER }} # ubuntu
+          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            # 레지스트리 로그인
+            echo ${{ secrets.PORTAINER_REGISTRY_PASSWORD }} | docker login registry.ktbcommunity.cloud -u ${{ secrets.PORTAINER_REGISTRY_USER }} --password-stdin
+            
+            # 최신 이미지 Pull
+            docker pull registry.ktbcommunity.cloud/ktb_fe:latest
+            
+            # 컨테이너 재시작 (기존 컨테이너 삭제 후 재생성)
+            docker rm -f fe-server || true
+
+            
+            # 새 컨테이너 실행
+            docker run -d \
+              -p 3000:3000 \
+              --name fe-server \
+              --restart always \
+              registry.ktbcommunity.cloud/ktb_fe:latest
+
+            docker image prune -f
